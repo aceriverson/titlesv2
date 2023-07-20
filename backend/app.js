@@ -29,7 +29,7 @@ app.use(session({
 app.use('/api/v2/create', express.json());
 app.post('/api/v2/create', async (req, res) => {
   if (!req.session.user) {
-      res.sendStatus(400);
+      res.sendStatus(401);
       return;
   }
 
@@ -49,7 +49,7 @@ app.post('/api/v2/create', async (req, res) => {
 
   } catch (error) {
       console.error('Error executing query:', error);
-      res.sendStatus(400);
+      res.sendStatus(500);
       return;
   }
 
@@ -59,7 +59,7 @@ app.post('/api/v2/create', async (req, res) => {
 app.use('/api/v2/delete', express.json())
 app.post('/api/v2/delete', async (req, res) => {
   if (!req.session.user) {
-    res.sendStatus(400)
+    res.sendStatus(401)
     return;
   };
 
@@ -73,7 +73,7 @@ app.post('/api/v2/delete', async (req, res) => {
 
   } catch (error) {
       console.error('Error executing query:', error);
-      res.sendStatus(400);
+      res.sendStatus(500);
       return;
   }
 
@@ -83,7 +83,7 @@ app.post('/api/v2/delete', async (req, res) => {
 app.use('/api/v2/edit', express.json());
 app.post('/api/v2/edit', async (req, res) => {
   if (!req.session.user) {
-    res.sendStatus(400)
+    res.sendStatus(401)
     return;
   };
 
@@ -103,7 +103,7 @@ app.post('/api/v2/edit', async (req, res) => {
 
   } catch (error) {
       console.error('Error executing query:', error);
-      res.sendStatus(400);
+      res.sendStatus(500);
       return;
   }
 
@@ -112,7 +112,7 @@ app.post('/api/v2/edit', async (req, res) => {
 
 app.get('/api/v2/polygons', async (req, res) => {
   if (!req.session?.user?.athlete?.id) {
-    res.sendStatus(400)
+    res.sendStatus(401)
     return;
   }
 
@@ -128,7 +128,7 @@ app.get('/api/v2/polygons', async (req, res) => {
 
   } catch (error) {
     console.error('Error executing query:', error);
-    res.sendStatus(400);
+    res.sendStatus(500);
   }
 })
 
@@ -195,7 +195,7 @@ app.all('/auth/webhook', async (req, res) => {
                 
               if (json.errors) {
                 console.log(`error refreshing token: ${req.body.owner_id}`);
-                res.sendStatus(400);
+                res.sendStatus(500);
                 return;
               } else {
                 try {
@@ -210,7 +210,7 @@ app.all('/auth/webhook', async (req, res) => {
           
                 } catch (error) {
                   console.error('Error executing query:', error);
-                  res.sendStatus(400);
+                  res.sendStatus(500);
                   return;
                 }
             }
@@ -222,7 +222,7 @@ app.all('/auth/webhook', async (req, res) => {
           if (json.errors) {
             console.error(`Error getting activity: ${req.body.object_id}`);
             console.log(json)
-            res.sendStatus(400);
+            res.sendStatus(500);
             return;
           }
 
@@ -268,7 +268,7 @@ app.all('/auth/webhook', async (req, res) => {
               if (json.errors) {
                 console.error(`Error renaming activity: ${req.body.object_id}`);
                 console.log(json)
-                res.sendStatus(400);
+                res.sendStatus(500);
                 return;
               }
 
@@ -280,20 +280,20 @@ app.all('/auth/webhook', async (req, res) => {
     
           } catch (error) {
             console.error('Error executing query:', error);
-            res.sendStatus(400);
+            res.sendStatus(500);
             return;
           }
           
         } catch (error) {
           console.error('Error executing query:', error);
-          res.sendStatus(400);
+          res.sendStatus(500);
           return;
         }
 
         res.sendStatus(200)
         return;
     } else {
-        res.sendStatus(400);
+        res.sendStatus(500);
         return;
     }
   }
