@@ -5,11 +5,15 @@
     import 'leaflet/dist/leaflet.css';
     import 'leaflet-draw/dist/leaflet.draw.css';
 
-    import { user } from './stores.js';
+    import { showMapTools, mapLocation, user } from './stores.js';
 
     let map;
+    // let routes = {};
 
     let drawControl;
+    let tileControl;
+    let zoomControl;
+    let attrControl;
     let drawnItems;
 
     const loadPolygons = async () => {
@@ -26,6 +30,7 @@
                 coords.push([parseFloat(t[1]), parseFloat(t[0])])
             })
 
+            // map.addLayer(L.polygon(coords))
             console.log(coords)
             const p = L.polygon(coords);
             p.bindTooltip(polygon.name, {direction: 'center'});
@@ -36,14 +41,33 @@
         })
     }
 
-    $: if ($user?.id) {
-        map.addControl(drawControl);
+    $: if ($user?.id && map) {
         loadPolygons();
     }
 
-    onMount(async () => {
-        map = L.map('map').setView([localStorage.getItem("centerLat") || 42.3602534, localStorage.getItem("centerLng") || -71.0582912], localStorage.getItem("zoomLvl") || 13);
+    $: if (!$showMapTools) {
+        map.removeControl(drawControl)
+        map.removeControl(tileControl)
+        map.removeControl(attrControl)
+        map.removeControl(zoomControl)
+    }
 
+    $: if ($showMapTools && map) {
+        drawControl.addTo(map)
+        tileControl.addTo(map)
+        attrControl.addTo(map)
+        zoomControl.addTo(map)
+        document.querySelector('.leaflet-control-layers-toggle').innerHTML = '<i class="ri-map-2-line"></i>'
+    }
+
+    $: if (map && $mapLocation) {
+        map.flyTo($mapLocation);
+    }
+
+    onMount(async () => {
+        map = L.map('map', {zoomControl: false, attributionControl: false,}).setView([localStorage.getItem("centerLat") || 42.3602534, localStorage.getItem("centerLng") || -71.0582912], localStorage.getItem("zoomLvl") || 13);
+        attrControl = L.control.attribution({position: 'bottomleft'}).addTo(map);
+        zoomControl = L.control.zoom().addTo(map);
         const defaultTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png').addTo(map);
 
         // Add a tile layer (you can use your preferred tile provider)
@@ -53,7 +77,7 @@
             'Terrain': L.tileLayer('https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}')
         }
 
-        L.control.layers(tileLayers, null, {position: 'bottomright'}).addTo(map);
+        tileControl = L.control.layers(tileLayers, null, {position: 'bottomright'}).addTo(map);
         document.querySelector('.leaflet-control-layers-toggle').innerHTML = '<i class="ri-map-2-line"></i>'
 
 

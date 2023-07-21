@@ -10,7 +10,7 @@
 </script>
 
 <div class="header">
-    <div class={toggleProf ? "profile-container" : ""}>
+    <!-- <div class={toggleProf ? "profile-container" : ""}>
         {#if $user?.id}
             {#if toggleProf}
             <a href="/">Home</a>
@@ -24,11 +24,11 @@
             <img class="ctxstrava" src="./ctxwstrava.png" alt="Connect with Strava">
         </a>
         {/if}
-    </div>
+    </div> -->
 </div>
 
 <style>
-    .header {
+    /* .header {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -90,5 +90,5 @@
         .sublogo {
             display: none;
         }
-    }
+    } */
 </style>

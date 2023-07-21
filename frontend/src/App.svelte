@@ -1,7 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import Map from './Map.svelte';
-	import Header from './Header.svelte';
+	import SideBar from './SideBar.svelte';
 	import 'remixicon/fonts/remixicon.css'
 
 	import { user } from './stores.js';
@@ -24,7 +24,7 @@
 </script>
 
 <main>
-	<Header />
+	<SideBar />
 	<Map />
 </main>
   
