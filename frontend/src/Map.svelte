@@ -1,5 +1,6 @@
 <script>
     import { onMount } from 'svelte';
+    import PopUp from './PopUp.svelte';
     import L from 'leaflet';
     import 'leaflet-draw';
     import 'leaflet/dist/leaflet.css';
@@ -16,12 +17,13 @@
     let attrControl;
     let drawnItems;
 
+    let currentPolygonEvent; 
+
     const loadPolygons = async () => {
         const response = await fetch('/titles/api/v2/polygons');
         const polygons = await response.json();
 
         polygons.rows.forEach((polygon) => {
-            // console.log(polygon)
             let coords1 = polygon.st_astext.slice(9, -2);
             let coords2 = coords1.split(',')
             let coords = []
@@ -30,8 +32,6 @@
                 coords.push([parseFloat(t[1]), parseFloat(t[0])])
             })
 
-            // map.addLayer(L.polygon(coords))
-            console.log(coords)
             const p = L.polygon(coords);
             p.bindTooltip(polygon.name, {direction: 'center'});
             p.options.id = polygon.puid;
@@ -62,6 +62,64 @@
 
     $: if (map && $mapLocation) {
         map.flyTo($mapLocation);
+    }
+
+    const createPolygon = (e) => {
+
+        const layer = e.layer;
+        // let label = window.prompt("Label")
+
+        layer.bindTooltip(e.label, {
+            direction: 'center',
+        });
+
+        layer.options.id = generateUniqueId();
+
+        drawnItems.addLayer(layer);
+
+        const data = {
+            latlngs: layer._latlngs[0],
+            name: layer._tooltip._content,
+            id: layer.options.id,
+        };
+
+        fetch('/titles/api/v2/create', 
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            }
+        ).catch(error => {
+            console.error('Error:', error);
+        });
+
+        currentPolygonEvent = null;
+    }
+
+    const deletePolygon = (e) => {
+        e.layers.eachLayer((layer) => {
+            const data = {
+                latlngs: layer._latlngs[0],
+                name: layer._tooltip._content,
+                id: layer.options.id
+            };
+            console.log(data);
+
+            fetch('/titles/api/v2/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+            });
+        });
+
+        currentPolygonEvent = null;
     }
 
     onMount(async () => {
@@ -102,33 +160,7 @@
 
         // Listen for drawing events
         map.on(L.Draw.Event.CREATED, (e) => {
-            const layer = e.layer;
-            let label = window.prompt("Label")
-
-            layer.bindTooltip(label, {
-                direction: 'center',
-            });
-
-            layer.options.id = generateUniqueId();
-
-            drawnItems.addLayer(layer);
-
-            const data = {
-                latlngs: layer._latlngs[0],
-                name: layer._tooltip._content,
-                id: layer.options.id,
-            };
-
-            fetch('/titles/api/v2/create', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data),
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                });
+            currentPolygonEvent = e;
         });
 
         map.on('draw:edited', (e) => {
@@ -154,35 +186,7 @@
         });
 
         map.on('draw:deleted', (e) => {
-            const numDeletedLayers = e.layers.getLayers().length;
-            if (numDeletedLayers > 0) {
-                const confirmDelete = window.confirm(`Are you sure you want to delete ${numDeletedLayers} route(s)?`);
-                if (!confirmDelete) {
-                    // If user cancels the deletion, re-add the deleted layers back to the map
-                    e.layers.eachLayer((layer) => drawnItems.addLayer(layer));
-                    return;
-                }
-            }
-
-            e.layers.eachLayer((layer) => {
-                const data = {
-                    latlngs: layer._latlngs[0],
-                    name: layer._tooltip._content,
-                    id: layer.options.id
-                };
-                console.log(data);
-
-                fetch('/titles/api/v2/delete', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data),
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                });
-            });
+            currentPolygonEvent = e;
         });
 
         map.on('move', (e) => {
@@ -203,12 +207,61 @@
 </script>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.2/leaflet.draw.css"/>
+
+<div>
+    <div id="map">
+    </div>
+    {#if currentPolygonEvent?.type == 'draw:created'}
+    <PopUp on:closePopUp={() => currentPolygonEvent = null}>
+        <h1 slot="header">Create Route</h1>
+        <div slot="message" style="margin-bottom: 2px">Label:</div>
+        <!-- svelte-ignore a11y-autofocus -->
+        <input slot="input" autofocus bind:value={currentPolygonEvent.label} on:keypress={(e) => {e.keyCode == 13 ? createPolygon(currentPolygonEvent) : null}}>
+        <div slot="buttons">
+            <button on:click={() => currentPolygonEvent = null}>
+                Cancel
+            </button>
+            <button class="submit" on:click={() => createPolygon(currentPolygonEvent)}>
+                Submit
+            </button>
+        </div>
+    </PopUp>
+    {/if}
+    {#if currentPolygonEvent?.type == 'draw:deleted'}
+    <PopUp on:closePopUp={() => {currentPolygonEvent.layers.eachLayer((layer) => drawnItems.addLayer(layer)); currentPolygonEvent = null}}>
+        <h1 slot="header">Delete Route{currentPolygonEvent?.layers?.getLayers()?.length > 1 ? 's' : ''}</h1>
+        <div slot="message" style="margin-bottom: 2px">Delete {currentPolygonEvent?.layers?.getLayers()?.length} route{currentPolygonEvent?.layers?.getLayers()?.length > 1 ? 's' : ''}?</div>
+        <!-- <input slot="input" bind:value={currentPolygonEvent.label} on:keypress={(e) => {e.keyCode == 13 ? createPolygon(currentPolygonEvent) : null}}> -->
+        <div slot="buttons">
+            <button on:click={() => {currentPolygonEvent.layers.eachLayer((layer) => drawnItems.addLayer(layer)); currentPolygonEvent = null}}>
+                Cancel
+            </button>
+            <button class="submit" on:click={() => deletePolygon(currentPolygonEvent)}>
+                Submit
+            </button>
+        </div>
+    </PopUp>
+    {/if}
+</div>
   
 <style>
     #map {
-      height: 100vh;
+        height: 100vh;
+    }
+    button {
+        background-color: #fff;
+    }
+    button:hover {
+        background-color: #f4f4f4;
+    }
+    h1 {
+        margin: 5px;
+    }
+    .submit {
+        background-color: cornflowerblue;
+        color: white;
+    }
+    .submit:hover {
+        color: black;
     }
 </style>
-  
-<div id="map"></div>
-  

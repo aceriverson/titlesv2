@@ -5,8 +5,8 @@
     let sideBarOpen = false;
 
     function toggleSideBar() {
-        showMapTools.set(!$showMapTools)
         sideBarOpen = !sideBarOpen
+        showMapTools.set(!sideBarOpen)
     }
 
     let searchTerm = "";
@@ -51,7 +51,7 @@
                     <label for="location-search">Find on map:</label>
                     <div class="location-search-bar">
                         <input name="location-search" type="search" placeholder="1200m Loop" bind:value={searchTerm} class:bad-input={isBadInput} on:keypress={searchFor}>
-                        <i class="ri-search-2-line location-search-button" on:click={searchFor}></i>
+                        <i class="ri-search-2-line location-search-button" on:click={searchFor} on:keypress={searchFor}></i>
                     </div>
                 </div>
             </div>
