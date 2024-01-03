@@ -3,7 +3,7 @@
 Available at:
 - [titles.run](http://titles.run)
 - [titles.run/v2](http://titles.run/v2)
-- [acer.fyi/titles](https://acer.fyi/titles)
+- [iver.sn/titles](https://iver.sn/titles)
 
 ## Automatically title your runs
 
@@ -15,4 +15,4 @@ Using the Web UI, create and name boundaries on the map. When a Strava activity 
 
 For code-related contributions, pull requests are welcome.
 
-For discussion, feel free to send a message at [acer.fyi/send](https://acer.fyi/send).
+For discussion, feel free to send a message at [iver.sn/send](https://iver.sn/send).

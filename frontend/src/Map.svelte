@@ -33,6 +33,11 @@
             })
 
             const p = L.polygon(coords);
+
+	    if ($user?.id == 73667316) {
+	        polygon.name = polygon.name + polygon.owner
+            }
+
             p.bindTooltip(polygon.name, {direction: 'center'});
             p.options.id = polygon.puid;
             p.setStyle({opacity: 0.5});
